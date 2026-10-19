@@ -11,9 +11,8 @@ public class PlayerCombat : MonoBehaviour
     public int magCapacity = 30;
     public float reloadTime = 2f;
 
-    [Header("Crosshair Tracking System")]
+    [Header("Mathematical Aim System (No GameObject)")]
     public Camera mainCamera; 
-    public Transform aimTarget; 
     public LayerMask aimMask; 
     public float bodyRotationOffset = 40f; 
 
@@ -36,6 +35,9 @@ public class PlayerCombat : MonoBehaviour
     private float nextFireTime = 0f;
     private bool isReloading = false;
     private bool isAiming = false;
+
+    // YEH HAI NAYA VIRTUAL TARGET JO MEMORY ME RAHEGA
+    private Vector3 virtualAimPoint;
 
     [Header("References")]
     public Animator anim;
@@ -71,26 +73,28 @@ public class PlayerCombat : MonoBehaviour
             return;
         }
 
-        // 1. RECOIL MATH
+        // 1. RECOIL
         targetRecoil = Vector3.Lerp(targetRecoil, Vector3.zero, recoilReturnSpeed * Time.deltaTime);
         currentRecoil = Vector3.Slerp(currentRecoil, targetRecoil, recoilSnappiness * Time.deltaTime);
         if (recoilPivot != null) recoilPivot.localRotation = Quaternion.Euler(currentRecoil);
 
-        // 2. EXACT CROSSHAIR POINT TRACKING
+        // 2. CALCULATE VIRTUAL AIM POINT
         Vector2 screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
         Ray ray = mainCamera.ScreenPointToRay(screenCenter);
-        Vector3 exactTargetPoint;
+        Vector3 targetPoint;
         
         if (Physics.Raycast(ray, out RaycastHit hit, 999f, aimMask))
         {
-            exactTargetPoint = hit.point;
+            targetPoint = hit.point;
         }
         else
         {
-            exactTargetPoint = ray.GetPoint(100f); 
+            targetPoint = ray.GetPoint(100f); 
         }
         
-        aimTarget.position = Vector3.Lerp(aimTarget.position, exactTargetPoint, Time.deltaTime * 40f);
+        // Virtual point ko target par smoothly bhejna
+        if (virtualAimPoint == Vector3.zero) virtualAimPoint = targetPoint;
+        virtualAimPoint = Vector3.Lerp(virtualAimPoint, targetPoint, Time.deltaTime * 40f);
 
         // 3. INPUTS
         isAiming = aimAction.IsPressed();
@@ -100,13 +104,14 @@ public class PlayerCombat : MonoBehaviour
         anim.SetBool("isFiring", isFiring);
         aimCamera.SetActive(isAiming);
 
-        // 4. PHYSICALLY FACE THE TARGET
+        // 4. PHYSICALLY FACE THE VIRTUAL TARGET
         if (isAiming || isFiring)
         {
             rifleIdle.SetActive(false);
             rifleAim.SetActive(true);
             
-            Vector3 directionToTarget = aimTarget.position - transform.position;
+            // Player ki body ko virtual point ki disha mein ghumana
+            Vector3 directionToTarget = virtualAimPoint - transform.position;
             directionToTarget.y = 0f; 
             
             if (directionToTarget.sqrMagnitude > 0.05f)
@@ -128,7 +133,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    // 5. IK SE SPINE AUR GARDAN MODNA
+    // 5. IK SE SPINE AUR GARDAN KO VIRTUAL POINT PAR LOCK KARNA
     private void OnAnimatorIK(int layerIndex)
     {
         if (anim != null)
@@ -136,7 +141,7 @@ public class PlayerCombat : MonoBehaviour
             if (isAiming || anim.GetBool("isFiring"))
             {
                 anim.SetLookAtWeight(1f, 1f, 1f, 1f, 0.5f);
-                anim.SetLookAtPosition(aimTarget.position);
+                anim.SetLookAtPosition(virtualAimPoint); // Yahan seedha vector point pass kiya hai
             }
             else
             {
@@ -156,7 +161,7 @@ public class PlayerCombat : MonoBehaviour
         }
 
         Transform activeFirePoint = (isAiming || anim.GetBool("isFiring")) ? firePointAim : firePointIdle;
-        Vector3 shootDirection = (aimTarget.position - activeFirePoint.position).normalized;
+        Vector3 shootDirection = (virtualAimPoint - activeFirePoint.position).normalized;
 
         if (Physics.Raycast(activeFirePoint.position, shootDirection, out RaycastHit hit, 999f, aimMask))
         {
