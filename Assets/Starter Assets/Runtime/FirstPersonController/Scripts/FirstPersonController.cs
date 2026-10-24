@@ -154,7 +154,8 @@ namespace StarterAssets
 		private void Move()
 		{
 			// set target speed based on move speed, sprint speed and if sprint is pressed
-			float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+			bool joystickRun = _input.move.magnitude >= 0.85f;
+			float targetSpeed = (_input.sprint || joystickRun)? SprintSpeed: MoveSpeed;
 
 			// a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 

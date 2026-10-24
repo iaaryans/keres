@@ -213,8 +213,11 @@ namespace StarterAssets
 
         private void Move()
         {
-            // set target speed based on move speed, sprint speed and if sprint is pressed
-            float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+            // PC: use the Sprint action. Mobile: full joystick deflection triggers sprint.
+            // A partial joystick drag remains at walking speed.
+            const float mobileRunThreshold = 0.85f;
+            bool mobileJoystickRun = _input.move.magnitude >= mobileRunThreshold;
+            float targetSpeed = (_input.sprint || mobileJoystickRun) ? SprintSpeed : MoveSpeed;
 
             // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
@@ -245,7 +248,7 @@ namespace StarterAssets
                 _speed = targetSpeed;
             }
 
-            _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
+            _animationBlend = Mathf.Lerp(_animationBlend, _speed, Time.deltaTime * SpeedChangeRate);
             if (_animationBlend < 0.01f) _animationBlend = 0f;
 
             // normalise input direction
@@ -371,6 +374,9 @@ namespace StarterAssets
 
         private void OnFootstep(AnimationEvent animationEvent)
         {
+            // MAGIC FIX: Agar network player ka controller band hai ya nahi mila toh sound play mat karo
+            if (_controller == null || !gameObject.activeInHierarchy) return;
+
             if (animationEvent.animatorClipInfo.weight > 0.5f)
             {
                 if (FootstepAudioClips.Length > 0)
@@ -383,10 +389,14 @@ namespace StarterAssets
 
         private void OnLand(AnimationEvent animationEvent)
         {
+            // Same fix land hone wale sound ke liye bhi laga do
+            if (_controller == null || !gameObject.activeInHierarchy) return;
+
             if (animationEvent.animatorClipInfo.weight > 0.5f)
             {
                 AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
             }
         }
+        
     }
 }
