@@ -15,3 +15,6 @@
 Thumbs.db
 .plastic/
 ignore.conf
+.utmp/
+KERES_BurstDebugInformation_DoNotShip/
+*.apk
