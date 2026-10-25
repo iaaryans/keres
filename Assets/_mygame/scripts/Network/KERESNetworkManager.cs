@@ -1,14 +1,21 @@
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
+using UnityEngine.SceneManagement; // NAYA ADD KIYA
 
 public class KERESNetworkManager : MonoBehaviourPunCallbacks
 {
     private const string RoomName = "KERES_TDM_TEST";
-    private const string PlayerPrefabName = "Player"; // Dhyan rakhein, Resources folder mein prefab ka naam exact 'Player' hona chahiye.
+    private const string PlayerPrefabName = "Player";
     private const byte MaxPlayers = 4;
 
     private bool playerSpawned;
+
+    private void Awake()
+    {
+        // JADOO: Scene change hone par is script ko destroy hone se bachao
+        DontDestroyOnLoad(this.gameObject);
+    }
 
     private void Start()
     {
@@ -48,18 +55,38 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
     {
         Debug.Log("KERES: Joined room " + PhotonNetwork.CurrentRoom.Name + ". Total Players in room: " + PhotonNetwork.CurrentRoom.PlayerCount);
 
-        if (playerSpawned)
-            return;
-
-        if (!PhotonNetwork.IsConnectedAndReady)
+        // Agar hum already SampleScene mein hain tabhi spawn karo
+        if (SceneManager.GetActiveScene().name == "SampleScene")
         {
-            Debug.LogError("KERES: Photon is not ready to spawn the player.");
-            return;
+             AttemptSpawnPlayer();
         }
+    }
 
-        playerSpawned = true;
+    // JADOO: Naya event listener jo tab trigger hoga jab scene badlega (Loader -> Map)
+    public override void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    public override void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "SampleScene")
+        {
+            AttemptSpawnPlayer();
+        }
+    }
+
+    private void AttemptSpawnPlayer()
+    {
+        if (playerSpawned) return;
         SpawnLocalPlayer();
     }
+
 
     private GameObject SpawnLocalPlayer()
     {
@@ -71,7 +98,6 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
 
         int actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
         
-        // JADOO: Dono players ko bilkul paas (0 aur 5 ki doori par) spawn kara rahe hain. Height thodi upar rakhi hai.
         float spawnX = actorNumber == 1 ? 0f : 5f; 
         Vector3 spawnPosition = new Vector3(spawnX, 2f, 0f);
 
@@ -100,6 +126,8 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
 
         playerSpawned = false;
         PhotonNetwork.Destroy(deadPlayerRoot);
-        SpawnLocalPlayer();
+        
+        // Chota sa delay daalo respawn karne se pehle
+        Invoke("SpawnLocalPlayer", 1f); 
     }
 }

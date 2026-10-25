@@ -134,7 +134,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &56640332
 RectTransform:
   m_ObjectHideFlags: 0
@@ -438,7 +438,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 400549277}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1763616927}
+        m_TargetAssemblyTypeName: KeresLobbyManager, Assembly-CSharp
+        m_MethodName: CreateGameRoom
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &400549277
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1358,7 +1370,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &945281595
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1601,7 +1613,7 @@ RectTransform:
   m_Father: {fileID: 1466331514}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1960,6 +1972,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1243005911}
   m_CullTransparentMesh: 1
+--- !u!1 &1270190091
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1270190093}
+  - component: {fileID: 1270190092}
+  m_Layer: 0
+  m_Name: NetworkManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1270190092
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1270190091}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6189bb9ef6ca2fd43acc2ab57531fd1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1270190093
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1270190091}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 985.2278, y: 474.8794, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1334728867
 GameObject:
   m_ObjectHideFlags: 0
@@ -2582,7 +2638,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1624618541}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1763616927}
+        m_TargetAssemblyTypeName: KeresLobbyManager, Assembly-CSharp
+        m_MethodName: JoinGameRoom
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1624618541
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2639,7 +2707,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1640092738
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2830,6 +2898,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   splashScreen: {fileID: 1640092741}
   loaderScreen: {fileID: 945281598}
+  mainMenuPanel: {fileID: 56640331}
+  playerNameInput: {fileID: 829521687}
+  roomCodeInput: {fileID: 554922776}
+  createRoomBtn: {fileID: 400549276}
+  joinRoomBtn: {fileID: 1624618540}
   loadingSlider: {fileID: 1758711734}
   splashDuration: 2.5
   fadeSpeed: 1.5
@@ -3351,3 +3424,4 @@ SceneRoots:
   - {fileID: 472366778}
   - {fileID: 1154138748}
   - {fileID: 1763616928}
+  - {fileID: 1270190093}
