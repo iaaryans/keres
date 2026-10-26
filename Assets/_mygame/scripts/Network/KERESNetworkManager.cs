@@ -1,14 +1,11 @@
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
-using UnityEngine.SceneManagement; // NAYA ADD KIYA
+using UnityEngine.SceneManagement; 
 
 public class KERESNetworkManager : MonoBehaviourPunCallbacks
 {
-    private const string RoomName = "KERES_TDM_TEST";
-    private const string PlayerPrefabName = "Player";
-    private const byte MaxPlayers = 4;
-
+    private const string PlayerPrefabName = "Player"; 
     private bool playerSpawned;
 
     private void Awake()
@@ -17,44 +14,10 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
         DontDestroyOnLoad(this.gameObject);
     }
 
-    private void Start()
-    {
-        PhotonNetwork.AutomaticallySyncScene = true;
-
-        if (PhotonNetwork.IsConnectedAndReady)
-        {
-            JoinTestRoom();
-        }
-        else if (!PhotonNetwork.IsConnected)
-        {
-            PhotonNetwork.ConnectUsingSettings();
-        }
-    }
-
-    public override void OnConnectedToMaster()
-    {
-        Debug.Log("KERES: Connected to Photon Master Server.");
-        JoinTestRoom();
-    }
-
-    private void JoinTestRoom()
-    {
-        if (PhotonNetwork.InRoom)
-            return;
-
-        RoomOptions options = new RoomOptions
-        {
-            MaxPlayers = MaxPlayers,
-            BroadcastPropsChangeToAll = true
-        };
-
-        PhotonNetwork.JoinOrCreateRoom(RoomName, options, TypedLobby.Default);
-    }
-
     public override void OnJoinedRoom()
     {
-        Debug.Log("KERES: Joined room " + PhotonNetwork.CurrentRoom.Name + ". Total Players in room: " + PhotonNetwork.CurrentRoom.PlayerCount);
-
+        Debug.Log("KERES: Master logic detected room join.");
+        
         // Agar hum already SampleScene mein hain tabhi spawn karo
         if (SceneManager.GetActiveScene().name == "SampleScene")
         {
@@ -62,14 +25,16 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
         }
     }
 
-    // JADOO: Naya event listener jo tab trigger hoga jab scene badlega (Loader -> Map)
+    // Warning fix: override aur base use kiya gaya hai
     public override void OnEnable()
     {
+        base.OnEnable();
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     public override void OnDisable()
     {
+        base.OnDisable();
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
@@ -87,7 +52,6 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
         SpawnLocalPlayer();
     }
 
-
     private GameObject SpawnLocalPlayer()
     {
         if (!PhotonNetwork.InRoom || !PhotonNetwork.IsConnectedAndReady)
@@ -98,31 +62,31 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
 
         int actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
         
+        // Spawn positions
         float spawnX = actorNumber == 1 ? 0f : 5f; 
         Vector3 spawnPosition = new Vector3(spawnX, 2f, 0f);
 
         GameObject player = PhotonNetwork.Instantiate(PlayerPrefabName, spawnPosition, Quaternion.identity);
 
-        if (player == null)
+        if (player != null)
         {
-            playerSpawned = false;
-            Debug.LogError("KERES: Spawn failed. PLEASE CHECK THAT 'Player' prefab is inside 'Assets/Resources' folder.");
-            return null;
+            playerSpawned = true;
+            Debug.Log($"KERES: Player {actorNumber} spawned at {spawnPosition}");
         }
-
-        playerSpawned = true;
-        Debug.Log("KERES: Successfully Spawned network player for actor " + actorNumber + " at position " + spawnPosition);
+        else
+        {
+            Debug.LogError("KERES: Spawn failed. PLEASE CHECK THAT 'Player' prefab is inside 'Assets/Resources' folder.");
+        }
+        
         return player;
     }
 
     public void RespawnLocalPlayer(GameObject deadPlayerRoot)
     {
-        if (!PhotonNetwork.InRoom || deadPlayerRoot == null)
-            return;
+        if (!PhotonNetwork.InRoom || deadPlayerRoot == null) return;
 
         PhotonView view = deadPlayerRoot.GetComponent<PhotonView>();
-        if (view == null || !view.IsMine)
-            return;
+        if (view == null || !view.IsMine) return;
 
         playerSpawned = false;
         PhotonNetwork.Destroy(deadPlayerRoot);

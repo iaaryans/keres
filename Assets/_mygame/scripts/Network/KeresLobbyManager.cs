@@ -3,19 +3,18 @@ using UnityEngine;
 using UnityEngine.UI;
 using Photon.Pun;
 using Photon.Realtime;
-using TMPro; // TextMeshPro ke liye zaroori
+using TMPro; 
 
-// JADOO 1: MonoBehaviour ki jagah MonoBehaviourPunCallbacks lagaya taaki Photon ke events sun sakein
 public class KeresLobbyManager : MonoBehaviourPunCallbacks
 {
     [Header("Screens (Canvas Groups)")]
     public CanvasGroup splashScreen;
     public CanvasGroup loaderScreen;
-    public GameObject mainMenuPanel; // Fix: Ye variable ab declare ho gaya hai
+    public GameObject mainMenuPanel; 
 
     [Header("Main Menu UI")]
-    public TMP_InputField playerNameInput; // Naam daalne wala dabba
-    public TMP_InputField roomCodeInput;   // Code daalne wala dabba
+    public TMP_InputField playerNameInput; 
+    public TMP_InputField roomCodeInput;   
     public Button createRoomBtn;
     public Button joinRoomBtn;
 
@@ -29,32 +28,18 @@ public class KeresLobbyManager : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
-        if (splashScreen != null)
-        {
-            splashScreen.alpha = 1f;
-            splashScreen.gameObject.SetActive(true);
-        }
-        
-        if (loaderScreen != null)
-        {
-            loaderScreen.alpha = 0f;
-            loaderScreen.gameObject.SetActive(true); 
-        }
-
+        if (splashScreen != null) { splashScreen.alpha = 1f; splashScreen.gameObject.SetActive(true); }
+        if (loaderScreen != null) { loaderScreen.alpha = 0f; loaderScreen.gameObject.SetActive(true); }
         if (loadingSlider != null) loadingSlider.value = 0f;
-        
         if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
     }
 
     private void Start()
     {
-        // Shuru mein buttons band rakho jab tak Photon server se connect na ho jaye
         if (createRoomBtn != null) createRoomBtn.interactable = false;
         if (joinRoomBtn != null) joinRoomBtn.interactable = false;
 
-        // JADOO 2: Background mein chupke se Photon Master Server se connect karo
         PhotonNetwork.ConnectUsingSettings();
-
         StartCoroutine(LobbyFlowRoutine());
     }
 
@@ -72,7 +57,6 @@ public class KeresLobbyManager : MonoBehaviourPunCallbacks
         }
         
         splashScreen.gameObject.SetActive(false);
-        splashScreen.alpha = 0f;
         loaderScreen.alpha = 1f;
 
         float loadProgress = 0f;
@@ -88,23 +72,20 @@ public class KeresLobbyManager : MonoBehaviourPunCallbacks
     }
 
     // --- PHOTON MULTIPLAYER LOGIC ---
-
     public override void OnConnectedToMaster()
     {
         Debug.Log("[KERES] Connected to Photon Server!");
-        PhotonNetwork.JoinLobby(); // Lobby join karo taaki rooms bana/dhoondh sakein
+        PhotonNetwork.JoinLobby(); 
         PhotonNetwork.AutomaticallySyncScene = true; 
     }
 
     public override void OnJoinedLobby()
     {
         Debug.Log("[KERES] Joined Matchmaking Lobby!");
-        // Ab player buttons daba sakta hai
         if (createRoomBtn != null) createRoomBtn.interactable = true;
         if (joinRoomBtn != null) joinRoomBtn.interactable = true;
     }
 
-    // Ye function "Create Room" button par lagayenge
     public void CreateGameRoom()
     {
         if (string.IsNullOrEmpty(playerNameInput.text) || string.IsNullOrEmpty(roomCodeInput.text))
@@ -118,7 +99,6 @@ public class KeresLobbyManager : MonoBehaviourPunCallbacks
         PhotonNetwork.CreateRoom(roomCodeInput.text, options);
     }
 
-    // Ye function "Join Room" button par lagayenge
     public void JoinGameRoom()
     {
         if (string.IsNullOrEmpty(playerNameInput.text) || string.IsNullOrEmpty(roomCodeInput.text))
@@ -131,15 +111,20 @@ public class KeresLobbyManager : MonoBehaviourPunCallbacks
         PhotonNetwork.JoinRoom(roomCodeInput.text);
     }
 
-    public override void OnJoinedRoom()
+    // JADOO: Agar same code se dusra player create karega, to Photon mana kar dega aur ye error aayega
+    public override void OnCreateRoomFailed(short returnCode, string message)
     {
-        Debug.Log($"[KERES] Room '{PhotonNetwork.CurrentRoom.Name}' joined! Loading Map...");
-        
-        PhotonNetwork.LoadLevel("MatchLoaderScene"); 
+        Debug.LogError($"[KERES] Room Create Failed! Sayad is code ({roomCodeInput.text}) se room pehle hi bana hua hai. Join dabao.");
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        Debug.LogError("[KERES] Room nahi mila ya full hai: " + message);
+        Debug.LogError("[KERES] Room nahi mila! Pehle kisi ko Create karna padega.");
+    }
+
+    public override void OnJoinedRoom()
+    {
+        Debug.Log($"[KERES] Room '{PhotonNetwork.CurrentRoom.Name}' joined! Loading Map...");
+        PhotonNetwork.LoadLevel("MatchLoaderScene"); 
     }
 }
