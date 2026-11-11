@@ -28,7 +28,7 @@ KERES is being developed with a focus on gameplay programming, multiplayer archi
 
 The project combines environmental storytelling and a dark, atmospheric visual direction with competitive multiplayer gameplay.
 
-> KERES is currently under active development. Features and implementation status documented here reflect the development prototype, not a claim of a finished commercial release.
+> KERES is currently under active development. Features and implementation status documented here reflect the development prototype, not a finished commercial release.
 
 ## 2. Project Overview
 
@@ -72,17 +72,17 @@ The following table distinguishes implemented systems from features still underg
 | Unity 6 project setup | Implemented |
 | Photon PUN 2 integration | Integrated |
 | Multiplayer lobby foundation | Implemented |
-| Room creation and joining | In development |
+| Room creation and joining | In Development |
 | Team Deathmatch map | Prototype |
 | Player movement and combat | Implemented / Iterating |
 | Health system | Implemented |
 | Mobile joystick controls | Implemented / Iterating |
 | Shooting mechanics | Implemented / Iterating |
-| Player respawn | In development |
-| Networked combat synchronization | In development |
-| Multiplayer HUD | In development |
+| Player respawn | In Development |
+| Networked combat synchronization | In Development |
+| Multiplayer HUD | In Development |
 | Android build pipeline | Available |
-| PC build pipeline | Development target |
+| PC build pipeline | Development Target |
 | Performance optimization | Ongoing |
 
 *Status is based on the development information available for this repository and has not been independently verified through a fresh build or multiplayer test.*
@@ -93,12 +93,32 @@ Visual documentation of the actual development build.
 
 ### Player Experience
 
-<!-- Replace with an actual photograph of a player using KERES -->
-
 <div align="center">
+
 <img src="Documentation/Screenshots/player-experience.jpeg" width="85%" alt="A player experiencing KERES gameplay" />
 
-<p><i>KERES — Real-world gameplay experience</i></p>
+<i>KERES — Real-world gameplay experience</i>
+
+</div>
+
+### Multiplayer Lobby
+
+<div align="center">
+
+<img src="Documentation/Screenshots/lobby.jpeg" width="85%" alt="KERES multiplayer lobby" />
+
+<i>KERES — Multiplayer Lobby</i>
+
+</div>
+
+### Team Deathmatch Gameplay
+
+<div align="center">
+
+<img src="Documentation/Screenshots/tdm-gameplay.jpeg" width="85%" alt="KERES Team Deathmatch gameplay" />
+
+<i>KERES — Team Deathmatch in-game experience</i>
+
 </div>
 
 ## 6. Technology Stack
@@ -188,7 +208,6 @@ KERES/
 │   │   │   ├── Player/
 │   │   │   ├── Network/
 │   │   │   └── ...
-│   │   │
 │   │   ├── scenes/
 │   │   ├── prefabs/
 │   │   ├── materials/
@@ -207,6 +226,10 @@ KERES/
 │
 ├── Documentation/
 │   └── Screenshots/
+│       ├── keres-logo.png
+│       ├── player-experience.jpeg
+│       ├── lobby.png
+│       └── tdm-gameplay.png
 │
 ├── README.md
 └── .gitignore
