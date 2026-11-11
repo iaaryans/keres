@@ -1,18 +1,18 @@
-
 using UnityEngine;
 
 public class DistanceCulling : MonoBehaviour
 {
     [Min(1f)]
-    public float visibleDistance = 45f;
+    public float visibleDistance = 80f; // Thoda distance badha diya taaki achanak se na aayen
 
     private Transform targetCamera;
     private Renderer[] renderers;
-    private float checkInterval = 0.25f;
+    private float checkInterval = 0.5f; // Interval thoda aur bada kar diya (har aadhe second mein check)
     private float nextCheckTime;
 
     private void Awake()
     {
+        // Awake mein sirf ek baar renderers nikal rahe hain, har baar nahi.
         renderers = GetComponentsInChildren<Renderer>(true);
 
         Camera cam = Camera.main;
@@ -33,16 +33,13 @@ public class DistanceCulling : MonoBehaviour
         if (Time.time < nextCheckTime) return;
         nextCheckTime = Time.time + checkInterval;
 
-        float distanceSqr =
-            (transform.position - targetCamera.position).sqrMagnitude;
+        float distanceSqr = (transform.position - targetCamera.position).sqrMagnitude;
+        bool shouldBeVisible = distanceSqr <= visibleDistance * visibleDistance;
 
-        bool shouldBeVisible =
-            distanceSqr <= visibleDistance * visibleDistance;
-
-        foreach (Renderer rend in renderers)
+        // JADOO FIX: Har renderer ko alag se enable/disable mat karo, poore GameObject ko kar do
+        if (gameObject.activeSelf != shouldBeVisible)
         {
-            if (rend != null && rend.enabled != shouldBeVisible)
-                rend.enabled = shouldBeVisible;
+            gameObject.SetActive(shouldBeVisible);
         }
     }
 }

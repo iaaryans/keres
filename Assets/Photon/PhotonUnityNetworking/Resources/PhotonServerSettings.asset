@@ -45,6 +45,7 @@ MonoBehaviour:
   - RPC_PlayEffects
   - RPC_PlayHitEffect
   - RPC_PlayShootEffects
+  - RPC_RegisterKill
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

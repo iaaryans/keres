@@ -25,8 +25,6 @@ public class MatchLoader : MonoBehaviour
             yield return null;
         }
 
-        // 2. Ab asli map (SampleScene) load karo
-        // Sirf Master Client load karega, baaki players auto-sync hoke follow karenge (Kyunki AutomaticallySyncScene = true hai)
         if (PhotonNetwork.IsMasterClient)
         {
             PhotonNetwork.LoadLevel("SampleScene"); 

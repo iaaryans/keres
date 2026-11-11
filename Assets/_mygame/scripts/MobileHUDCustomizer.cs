@@ -7,10 +7,16 @@ public class MobileHUDCustomizer : MonoBehaviour
 {
     private readonly List<HUDDragItem> items = new();
     private HUDDragItem selected;
-    private bool editing;
-
+    private bool isEditing;
     private Canvas canvas;
-    private Button editButton, smallerButton, biggerButton, doneButton;
+
+    [Header("Editing UI")]
+    public GameObject editModeToolbar; 
+    
+    // NAYA FIX: Ab ye GameObject accept karega (tu seedha Image drag kar sakta hai)
+    public GameObject smallerButton;
+    public GameObject biggerButton;
+    public GameObject doneButton;
 
     void Start()
     {
@@ -24,25 +30,14 @@ public class MobileHUDCustomizer : MonoBehaviour
             return;
         }
 
-        string[] controlNames =
-        {
-            "Fixed Joystick",
-            "ShootBtn",
-            "ReloadBtn",
-            "AimBtn",
-            "JumpBtn"
-        };
+        if (editModeToolbar != null) editModeToolbar.SetActive(false);
+
+        string[] controlNames = { "Fixed Joystick", "ShootBtn", "ReloadBtn", "AimBtn", "JumpBtn" };
 
         foreach (string controlName in controlNames)
         {
-            // NAYA FIX: Ab ye direct bacchon ke alawa andar ke folders me bhi dhoondhega
             Transform control = FindDeepChild(canvas.transform, controlName);
-
-            if (control == null)
-            {
-                Debug.LogWarning($"[KERES] HUD Item '{controlName}' nahi mila! Naam spelling check karo.");
-                continue;
-            }
+            if (control == null) continue;
 
             HUDDragItem item = control.GetComponent<HUDDragItem>();
             if (item == null) item = control.gameObject.AddComponent<HUDDragItem>();
@@ -54,11 +49,27 @@ public class MobileHUDCustomizer : MonoBehaviour
             if (selected == null) selected = item;
         }
 
-        CreateToolbar();
-        SetEditing(false);
+        // Setup Toolbar Buttons (Jadoo function call)
+        SetupButton(smallerButton, () => ResizeSelected(0.9f));
+        SetupButton(biggerButton, () => ResizeSelected(1.1f));
+        SetupButton(doneButton, StopEditing);
+
+        SetEditingState(false);
     }
 
-    // Deep search function
+    // NAYA JADOO FUNCTION: Agar object pe Button nahi hai, toh ye khud laga dega!
+    private void SetupButton(GameObject obj, UnityEngine.Events.UnityAction action)
+    {
+        if (obj == null) return;
+        
+        Button btn = obj.GetComponent<Button>();
+        if (btn == null) 
+        {
+            btn = obj.AddComponent<Button>(); // Auto-add Button component
+        }
+        btn.onClick.AddListener(action);
+    }
+
     private Transform FindDeepChild(Transform parent, string childName)
     {
         foreach (Transform child in parent)
@@ -72,83 +83,45 @@ public class MobileHUDCustomizer : MonoBehaviour
 
     public void RefreshInputBindings()
     {
-        if (editing) return;
+        if (isEditing) return;
         foreach (HUDDragItem item in items)
         {
             if (item != null) item.RefreshInputBindings();
         }
     }
 
-    void CreateToolbar()
+    public void StartEditing()
     {
-        editButton = CreateButton("EDIT HUD", -165);
-        smallerButton = CreateButton("SIZE -", -55);
-        biggerButton = CreateButton("SIZE +", 55);
-        doneButton = CreateButton("DONE", 165);
-
-        editButton.onClick.AddListener(() => SetEditing(!editing));
-        smallerButton.onClick.AddListener(() => ResizeSelected(0.9f));
-        biggerButton.onClick.AddListener(() => ResizeSelected(1.1f));
-        doneButton.onClick.AddListener(() =>
-        {
-            foreach (var item in items) item.SaveLayout();
-            SetEditing(false);
-        });
+        SetEditingState(true);
     }
 
-    Button CreateButton(string label, float x)
+    public void StopEditing()
     {
-        GameObject go = new GameObject(label, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
-        go.transform.SetParent(canvas.transform, false);
-
-        RectTransform rt = go.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 1f); rt.anchorMax = new Vector2(0.5f, 1f);
-        rt.pivot = new Vector2(0.5f, 1f); rt.anchoredPosition = new Vector2(x, -20);
-        rt.sizeDelta = new Vector2(100, 48);
-
-        Image image = go.GetComponent<Image>();
-        image.color = new Color(0.12f, 0.16f, 0.22f, 0.95f);
-
-        Button button = go.GetComponent<Button>();
-        button.targetGraphic = image;
-
-        GameObject textGO = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
-        textGO.transform.SetParent(go.transform, false);
-
-        RectTransform textRT = textGO.GetComponent<RectTransform>();
-        textRT.anchorMin = Vector2.zero; textRT.anchorMax = Vector2.one;
-        textRT.offsetMin = Vector2.zero; textRT.offsetMax = Vector2.zero;
-
-        Text text = textGO.GetComponent<Text>();
-        text.text = label; text.alignment = TextAnchor.MiddleCenter;
-        text.color = Color.white; text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        text.fontSize = 15; text.fontStyle = FontStyle.Bold; text.raycastTarget = false;
-
-        return button;
+        foreach (var item in items) item.SaveLayout();
+        SetEditingState(false);
     }
 
     public void Select(HUDDragItem item) { selected = item; }
 
-    void ResizeSelected(float factor)
+    private void ResizeSelected(float factor)
     {
-        if (!editing || selected == null) return;
+        if (!isEditing || selected == null) return;
         RectTransform rt = selected.GetComponent<RectTransform>();
         Vector2 size = rt.sizeDelta * factor;
         rt.sizeDelta = new Vector2(Mathf.Clamp(size.x, 40f, 500f), Mathf.Clamp(size.y, 40f, 500f));
         selected.SaveLayout();
     }
 
-    void SetEditing(bool value)
+    private void SetEditingState(bool value)
     {
-        editing = value;
+        isEditing = value;
         foreach (var item in items) item.SetEditing(value);
-        smallerButton.interactable = value; biggerButton.interactable = value;
-        doneButton.gameObject.SetActive(value);
-        Text label = editButton.GetComponentInChildren<Text>();
-        label.text = value ? "EDITING..." : "EDIT HUD";
+        
+        if (editModeToolbar != null) editModeToolbar.SetActive(value);
     }
 }
 
+// Baki HUDDragItem class waisi ki waisi hi hai
 public class HUDDragItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     private MobileHUDCustomizer owner;
