@@ -17,7 +17,7 @@ public class PlayerHealth : MonoBehaviour
     [Header("Damage Feedback (Blood & Sound)")]
     public AudioSource healthAudio; 
     public AudioClip painSound; 
-    public AudioClip deathSound; // NAYA: Marne ka sound effect
+    public AudioClip deathSound; 
     public Image bloodScreenImage; 
     public float bloodFadeSpeed = 2f; 
 
@@ -35,8 +35,8 @@ public class PlayerHealth : MonoBehaviour
     private CharacterController cc;
     private Coroutine bloodFadeCoroutine;
 
-    // Double damage rokne ke liye
     private float lastDamageTime;
+    private int lastKillerActorNumber = -1;
 
     private void Awake()
     {
@@ -67,9 +67,9 @@ public class PlayerHealth : MonoBehaviour
         isDead = false;
         respawnScheduled = false;
         currentHealth = maxHealth;
+        lastKillerActorNumber = -1;
         SetRagdollState(false); 
 
-        // Game start hote hi ya respawn hone par blood ko zabardasti 100% transparent (invisible) kar do
         if (bloodScreenImage != null)
         {
             Color c = bloodScreenImage.color;
@@ -86,18 +86,17 @@ public class PlayerHealth : MonoBehaviour
         if (cc != null && (rootPhotonView == null || rootPhotonView.IsMine)) cc.enabled = true;
     }
 
-    public void TakeDamage(float damageAmount)
+    public void TakeDamage(float damageAmount, int killerActorID = -1)
     {
         if (isDead || damageAmount <= 0f) return;
 
-        // Ek frame mein do goli (double damage) lagne se rokne ka shield
         if (Time.time - lastDamageTime < 0.05f) return; 
         lastDamageTime = Time.time;
 
         currentHealth = Mathf.Clamp(currentHealth - damageAmount, 0f, maxHealth);
-        Debug.Log($"[KERES] {gameObject.name} took {damageAmount} damage. HP: {currentHealth}/{maxHealth}");
+        
+        if (killerActorID != -1) lastKillerActorNumber = killerActorID;
 
-        // Sirf local player ko hit effect dikhao
         if (rootPhotonView != null && rootPhotonView.IsMine)
         {
             PlayPainFeedback();
@@ -108,10 +107,7 @@ public class PlayerHealth : MonoBehaviour
 
     private void PlayPainFeedback()
     {
-        if (healthAudio != null && painSound != null)
-        {
-            healthAudio.PlayOneShot(painSound);
-        }
+        if (healthAudio != null && painSound != null) healthAudio.PlayOneShot(painSound);
 
         if (bloodScreenImage != null)
         {
@@ -120,6 +116,7 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    // MISSING METHOD ADDED HERE: Ye raha FadeBloodScreen jo gayab tha!
     private IEnumerator FadeBloodScreen()
     {
         Color c = bloodScreenImage.color;
@@ -141,13 +138,8 @@ public class PlayerHealth : MonoBehaviour
     {
         if (isDead) return;
         isDead = true;
-        Debug.Log($"[KERES] {gameObject.name} died.");
 
-        // JADOO: Marne par death sound bajana
-        if (healthAudio != null && deathSound != null)
-        {
-            healthAudio.PlayOneShot(deathSound);
-        }
+        if (healthAudio != null && deathSound != null) healthAudio.PlayOneShot(deathSound);
 
         if (combatScript != null) combatScript.enabled = false;
         if (thirdPersonController != null) thirdPersonController.enabled = false;
@@ -157,6 +149,11 @@ public class PlayerHealth : MonoBehaviour
         if (cc != null) cc.enabled = false;
 
         SetRagdollState(true); 
+
+        if (rootPhotonView != null && rootPhotonView.IsMine && KERES_MatchManager.Instance != null && KERES_MatchManager.Instance.photonView != null && lastKillerActorNumber != -1)
+        {
+            KERES_MatchManager.Instance.photonView.RPC("RPC_RegisterKill", RpcTarget.All, lastKillerActorNumber, rootPhotonView.Owner.ActorNumber);
+        }
 
         if (rootPhotonView != null && rootPhotonView.IsMine && !respawnScheduled)
         {

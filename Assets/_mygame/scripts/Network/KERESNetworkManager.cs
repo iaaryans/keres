@@ -8,24 +8,13 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
     private const string PlayerPrefabName = "Player"; 
     private bool playerSpawned;
 
-    private void Awake()
-    {
-        // JADOO: Scene change hone par is script ko destroy hone se bachao
-        DontDestroyOnLoad(this.gameObject);
-    }
+    private void Awake() { DontDestroyOnLoad(this.gameObject); }
 
     public override void OnJoinedRoom()
     {
-        Debug.Log("KERES: Master logic detected room join.");
-        
-        // Agar hum already SampleScene mein hain tabhi spawn karo
-        if (SceneManager.GetActiveScene().name == "SampleScene")
-        {
-             AttemptSpawnPlayer();
-        }
+        if (SceneManager.GetActiveScene().name == "SampleScene") AttemptSpawnPlayer();
     }
 
-    // Warning fix: override aur base use kiya gaya hai
     public override void OnEnable()
     {
         base.OnEnable();
@@ -40,10 +29,7 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (scene.name == "SampleScene")
-        {
-            AttemptSpawnPlayer();
-        }
+        if (scene.name == "SampleScene") AttemptSpawnPlayer();
     }
 
     private void AttemptSpawnPlayer()
@@ -60,24 +46,41 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
             return null;
         }
 
-        int actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
-        
-        // Spawn positions
-        float spawnX = actorNumber == 1 ? 0f : 5f; 
-        Vector3 spawnPosition = new Vector3(spawnX, 2f, 0f);
+        Vector3 spawnPosition = new Vector3(0f, 2f, 0f); 
+        Quaternion spawnRotation = Quaternion.identity;
 
-        GameObject player = PhotonNetwork.Instantiate(PlayerPrefabName, spawnPosition, Quaternion.identity);
+        int myTeam = (PhotonNetwork.LocalPlayer.ActorNumber % 2 == 0) ? 1 : 0; 
+
+        string containerName = (myTeam == 0) ? "BlueSpawns" : "RedSpawns";
+        GameObject teamContainer = GameObject.Find(containerName);
+
+        if (teamContainer != null)
+        {
+            Transform[] points = teamContainer.GetComponentsInChildren<Transform>();
+            if (points.Length > 1) 
+            {
+                int randomIndex = Random.Range(1, points.Length);
+                
+                // JADOO FIX: Sirf X aur Z axis mein thoda idhar-udhar hoga, Y hamesha original point jaisa rahega!
+                Vector3 randomOffset = new Vector3(Random.Range(-1.5f, 1.5f), 0f, Random.Range(-1.5f, 1.5f));
+                
+                spawnPosition = points[randomIndex].position + randomOffset;
+                spawnRotation = points[randomIndex].rotation;
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"[KERES] {containerName} nahi mila! Check karo.");
+        }
+
+        GameObject player = PhotonNetwork.Instantiate(PlayerPrefabName, spawnPosition, spawnRotation);
 
         if (player != null)
         {
             playerSpawned = true;
-            Debug.Log($"KERES: Player {actorNumber} spawned at {spawnPosition}");
+            KeresBattleHUD hud = FindFirstObjectByType<KeresBattleHUD>();
+            if (hud != null && hud.respawnPanel != null) hud.respawnPanel.SetActive(false);
         }
-        else
-        {
-            Debug.LogError("KERES: Spawn failed. PLEASE CHECK THAT 'Player' prefab is inside 'Assets/Resources' folder.");
-        }
-        
         return player;
     }
 
@@ -91,7 +94,9 @@ public class KERESNetworkManager : MonoBehaviourPunCallbacks
         playerSpawned = false;
         PhotonNetwork.Destroy(deadPlayerRoot);
         
-        // Chota sa delay daalo respawn karne se pehle
-        Invoke("SpawnLocalPlayer", 1f); 
+        KeresBattleHUD hud = FindFirstObjectByType<KeresBattleHUD>();
+        if (hud != null) hud.StartRespawnCountdown(3f);
+        
+        Invoke("SpawnLocalPlayer", 3f); 
     }
 }

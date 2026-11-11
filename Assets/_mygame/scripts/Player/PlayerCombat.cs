@@ -96,11 +96,10 @@ public class PlayerCombat : MonoBehaviour
         if (mainCamera == null) mainCamera = Camera.main;
         if (weaponAudio == null) weaponAudio = GetComponent<AudioSource>();
 
-        // JADOO 3: Gunshot Audio ko lamba sunai dene ke liye spatial blend adjust karna
         if (weaponAudio != null)
         {
-            weaponAudio.spatialBlend = 0.5f; // 0 (2D - Har jagah sunai dega), 1 (3D - Sirf pass me). 0.5 balanced hai.
-            weaponAudio.maxDistance = 500f; // Map ke end tak sound jayegi
+            weaponAudio.spatialBlend = 0.5f; 
+            weaponAudio.maxDistance = 500f; 
             weaponAudio.rolloffMode = AudioRolloffMode.Linear;
         }
 
@@ -148,7 +147,7 @@ public class PlayerCombat : MonoBehaviour
 
         if (currentAmmo <= 0 || isReloadPressed)
         {
-            if (currentAmmo < magCapacity && reserveAmmo > 0) RequestReload();
+            if (currentAmmo < magCapacity) RequestReload();
             if (currentAmmo <= 0)
             {
                 isFiring = false;
@@ -191,6 +190,29 @@ public class PlayerCombat : MonoBehaviour
 
         if (isFiring && Time.time >= nextFireTime && !isReloading) Shoot();
         else if (!isFiring && muzzleFlash != null && muzzleFlash.isPlaying) muzzleFlash.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+    }
+
+    public void RequestReload()
+    {
+        if (!isReloading && currentAmmo < magCapacity) StartCoroutine(ReloadRoutine());
+    }
+
+    private IEnumerator ReloadRoutine()
+    {
+        if (isReloading || currentAmmo >= magCapacity) yield break;
+        isReloading = true;
+        reloadTimer = Mathf.Max(0.01f, reloadTime);
+
+        if (anim != null) { anim.SetBool("isFiring", false); anim.SetBool("isAiming", false); anim.SetTrigger("ReloadTrigger"); }
+        isFiring = false; isAiming = false;
+        if (aimCamera != null) aimCamera.SetActive(false);
+        if (weaponAudio != null && reloadSound != null) weaponAudio.PlayOneShot(reloadSound);
+
+        while (reloadTimer > 0f) { reloadTimer -= Time.deltaTime; yield return null; }
+
+        currentAmmo = magCapacity; 
+        
+        reloadTimer = 0f; isReloading = false;
     }
 
     private void LateUpdate()
@@ -262,16 +284,13 @@ public class PlayerCombat : MonoBehaviour
 
             if (recoilPivot != null) targetRecoil += new Vector3(recoilKickX, Random.Range(-recoilKickY, recoilKickY), 0f);
 
-            // Apni screen par effect chalao
             PlayShootEffects(virtualAimPoint);
 
-            // Firing ki khabar poore server (dusre players) ko do!
             if (rootPhotonView != null)
             {
                 KERESNetworkCombat netCombat = rootPhotonView.GetComponent<KERESNetworkCombat>();
                 if (netCombat != null)
                 {
-                    // JADOO: Target 'Others' rakha hai, yani baaki sabki screen par teri gun se aag niklegi
                     netCombat.photonView.RPC("RPC_PlayShootEffects", RpcTarget.Others, virtualAimPoint);
                 }
             }
@@ -286,7 +305,6 @@ public class PlayerCombat : MonoBehaviour
                     muzzleFlash.Play(true); 
                 }
 
-                // Fix: Start point hamesha 'firePointAim' se hona chahiye taaki gun se nikalta hua lage
                 Vector3 tracerStart = firePointAim != null ? firePointAim.position : (muzzleFlash != null ? muzzleFlash.transform.position : transform.position);
                 
                 if (bulletTracerPrefab != null) 
@@ -308,13 +326,12 @@ public class PlayerCombat : MonoBehaviour
                 }
             }
 
-    // Enemy ko hit karne par wahan se blood particle nikalne ka logic
     public void PlayHitParticle(Vector3 position, Vector3 normal)
     {
         if (bloodHitEffectPrefab != null)
         {
             GameObject blood = Instantiate(bloodHitEffectPrefab, position, Quaternion.LookRotation(normal));
-            Destroy(blood, 2f); // 2 second baad clean up kar do
+            Destroy(blood, 2f); 
         }
     }
 
@@ -335,13 +352,11 @@ public class PlayerCombat : MonoBehaviour
 
             if (targetView != null && targetCombat != null && !targetView.IsMine)
             {
-                // 1. Dushman ko damage do
-                targetCombat.photonView.RPC("RPC_RequestDamage", RpcTarget.MasterClient, damagePerShot);
+                // JADOO FIX: Yahan 2 parameter bhej rahe hain taaki error na aaye (damage, killerId)
+                targetCombat.photonView.RPC("RPC_RequestDamage", RpcTarget.MasterClient, damagePerShot, PhotonNetwork.LocalPlayer.ActorNumber);
                 
-                // 2. Apni screen par blood particle dikhao
                 PlayHitParticle(hit.point, hit.normal);
                 
-                // 3. Network me sabko batao ki yaha par blood nikla hai
                 targetCombat.photonView.RPC("RPC_PlayHitEffect", RpcTarget.Others, hit.point, hit.normal);
 
                 return; 
@@ -367,29 +382,5 @@ public class PlayerCombat : MonoBehaviour
         line.SetPosition(0, startPoint); line.SetPosition(1, hitPoint);
         yield return new WaitForSeconds(0.07f);
         if (tracerObject != null) Destroy(tracerObject);
-    }
-
-    public void RequestReload()
-    {
-        if (!isReloading && currentAmmo < magCapacity && reserveAmmo > 0) StartCoroutine(ReloadRoutine());
-    }
-
-    private IEnumerator ReloadRoutine()
-    {
-        if (isReloading || currentAmmo >= magCapacity || reserveAmmo <= 0) yield break;
-        isReloading = true;
-        reloadTimer = Mathf.Max(0.01f, reloadTime);
-
-        if (anim != null) { anim.SetBool("isFiring", false); anim.SetBool("isAiming", false); anim.SetTrigger("ReloadTrigger"); }
-        isFiring = false; isAiming = false;
-        if (aimCamera != null) aimCamera.SetActive(false);
-        if (weaponAudio != null && reloadSound != null) weaponAudio.PlayOneShot(reloadSound);
-
-        while (reloadTimer > 0f) { reloadTimer -= Time.deltaTime; yield return null; }
-
-        int roundsNeeded = Mathf.Max(0, magCapacity - currentAmmo);
-        int roundsToLoad = Mathf.Min(roundsNeeded, reserveAmmo);
-        currentAmmo += roundsToLoad; reserveAmmo -= roundsToLoad;
-        reloadTimer = 0f; isReloading = false;
     }
 }

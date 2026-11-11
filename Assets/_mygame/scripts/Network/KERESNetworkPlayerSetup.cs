@@ -78,7 +78,6 @@ public class KERESNetworkPlayerSetup : MonoBehaviour
 
             EnforceSingleEventSystem(true);
 
-            // JADOO 2: Multiple Audio Listeners ka fix, sirf local ka ON rahega
             AudioListener[] allListeners = FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
             foreach(var l in allListeners) l.enabled = false;
             AudioListener myListener = GetComponentInChildren<AudioListener>(true);
@@ -87,8 +86,8 @@ public class KERESNetworkPlayerSetup : MonoBehaviour
             MobileHUDCustomizer customizer = FindFirstObjectByType<MobileHUDCustomizer>();
             if (customizer != null) customizer.RefreshInputBindings();
 
-            KeresDevelopmentHUD hud = FindFirstObjectByType<KeresDevelopmentHUD>();
-            if (hud != null) hud.RefreshPlayerReferences();
+            KeresBattleHUD battleHud = FindFirstObjectByType<KeresBattleHUD>();
+            if (battleHud != null) battleHud.enabled = true;
         }
 
         if (logSetup) Debug.Log($"KERES: {(isMine ? "LOCAL" : "REMOTE")} player setup applied for actor {photonView.OwnerActorNr}");
